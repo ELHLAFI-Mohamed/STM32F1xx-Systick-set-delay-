@@ -1,11 +1,14 @@
 #include "stm32f1xx.h"
 #include "GPIO_drive.h"
 
-//delay declaration
-void delay(int rep);
+void systick_init(void);
+void DelayMillis(void);
+void DelayMs(unsigned long t);
+
 
 int signal=0;
 int main(void){
+	systick_init();
 
 GPIO_init(port_A,0,Input_mode,Input_PP);
 GPIO_init(port_C,13,Output_50Mhz,Output_GP_PP);
@@ -20,11 +23,11 @@ __enable_irq();
  while(1){
 	 GPIO_write(port_A,12,signal);
 	 if(signal){
-		 delay(10);
+		 DelayMs(1000);
 
 		 GPIO_toggle(port_C,13);
 
-	 delay(1);
+		 DelayMs(1000);
 
 	 }
 	 else{
@@ -35,14 +38,6 @@ __enable_irq();
 
 }
 
-void delay(int rep){
-	for(;rep>0;rep--){
-		for(int i=0;i<100000;i++)
-		{
-
-		}
-	}
-}
 
 void EXTI0_IRQHandler(){
 
@@ -53,8 +48,24 @@ void EXTI0_IRQHandler(){
 	else signal=1;
 }
 
+void systick_init(void){
+	SysTick->CTRL=0;
+	SysTick->LOAD=0x00FFFFFF;
+	SysTick->CTRL=5; // clock processor resource
 
+}
 
+void DelayMillis(void){
+	SysTick->LOAD=72000-1; // cpu 72Mhz
+	SysTick->VAL=0;
+	while((SysTick->CTRL & 0x00010000)==0);
+}
+
+void DelayMs(unsigned long t){
+	for(;t>0;t--){
+		DelayMillis();
+	}
+}
 
 
 
